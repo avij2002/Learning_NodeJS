@@ -1,5 +1,7 @@
 import { Schema, model } from "mongoose";
 import bcrypt from "bcrypt"
+import { jwt } from "jsonwebtoken";
+
 const userSchema = Schema({
     username: {
         type: String,
@@ -16,7 +18,7 @@ const userSchema = Schema({
         unique: true,
         trim: true
     },
-    fullname: {
+    fullName: {
         type: String,
         required: [true, "FullName is required"],
         trim: true,
@@ -46,11 +48,43 @@ const userSchema = Schema({
  * pre is a middleware used in mongoose to perform some operations before some 
    event
  */
-userSchema.pre("save", async function() {
-    if(!this.isModified("password")) return next();
-    
+userSchema.pre("save", async function () {
+    if (!this.isModified("password")) return next();
     this.password = await bcrypt.hash(this.password, 10);
     next()
 })
+
+/**
+ * This method will check if the password is correct
+ */
+userSchema.methods.isPasswordCorrect = async function (password) {
+    return await bcrypt.compare(password, this.password);
+}
+
+userSchema.methods.generateAccessToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id,
+            username: this.username,
+            email: this.email,
+            fullName: this.fullName
+        },
+        process.env.JWT_ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRY
+        });
+}
+
+userSchema.methods.generateRefreshToken = function () {
+    return jwt.sign(
+        {
+            _id: this._id
+        },
+        process.env.JWT_REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY
+        }
+    )
+}
 
 export const User = model("User", userSchema);
