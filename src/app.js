@@ -1,6 +1,7 @@
 import express, { urlencoded } from "express";
-import cors from "cors"
+import cors from "cors";
 import cookieParser from "cookie-parser";
+import userRouter from "./routes/user.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,10 +10,12 @@ const PORT = process.env.PORT || 3000;
  * cors -> This middleware is used to handle cors related queries.
  */
 
-app.use(cors({
+app.use(
+  cors({
     origin: process.env.CORS_ORIGIN,
-    credentials: true
-}));
+    credentials: true,
+  })
+);
 
 /**
  * These are middlwares used by express.js
@@ -32,4 +35,7 @@ app.use(urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static("public"));
 app.use(cookieParser());
 
-export { app, PORT }
+//Routes
+app.use("/api/v1/user", userRouter);
+
+export { app, PORT };

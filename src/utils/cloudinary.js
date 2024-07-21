@@ -1,40 +1,42 @@
-import { v2 as cloudinary } from "cloudinary"
-import fs from "fs"
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 /**
- * 
- * @param {string} localFilePath 
+ *
+ * @param {string} localFilePath
  * @returns response
- * 
+ *
  * This function upload the media file to cloudinary.
- * This will return an object response from which we will take out the url and 
+ * This will return an object response from which we will take out the url and
  * save in our database
  */
 
 const uploadMediaOnCloudinary = async (localFilePath) => {
-    try {
-        if (!localFilePath) return null;
+  try {
+    if (!localFilePath) return null;
 
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "auto"
-        });
+    const response = await cloudinary.uploader.upload(localFilePath, {
+      resource_type: "auto",
+    });
 
-        console.log("SUCCESS: File uploaded to cloudinary successfully: "
-            , response);
+    console.log(
+      "SUCCESS: File uploaded to cloudinary successfully: ",
+      response
+    );
 
-        fs.unlinkSync(localFilePath)
+    fs.unlinkSync(localFilePath);
+    console.log(response);
+    return response.url;
+  } catch (error) {
+    fs.unlinkSync(localFilePath);
+    return null;
+  }
+};
 
-        return response;
-    } catch (error) {
-        fs.unlinkSync(localFilePath);
-        return null;
-    }
-}
-
-export { uploadMediaOnCloudinary }
+export { uploadMediaOnCloudinary };
