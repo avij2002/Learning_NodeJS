@@ -4,6 +4,13 @@ import { User } from "../models/user.model.js";
 import { uploadMediaOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+/**
+ *
+ * @param {*} userID
+ * @returns {accessToken, refreshToken}
+ * This function helps in generating accessToken and refreshToken
+ * and saving refreshToken in database
+ */
 const generateAccessAndRefreshToken = async (userID) => {
   try {
     // getting user from database
@@ -23,28 +30,35 @@ const generateAccessAndRefreshToken = async (userID) => {
 
     return { accessToken, refreshToken };
   } catch (error) {
-    throw new ApiError(500, "Something went wrong while generating access and refresh Token");
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access and refresh Token"
+    );
   }
 };
 
 const registerUser = asyncHandler(async (req, res) => {
-
   //First we will extract the fields coming in the request
   const { fullName, username, email, password } = req.body;
 
   //After extracting all the data from the request, we will check that these
   //fields should not be null
 
-  if ([fullName, email, username, password].some((field) => field.trim() === "")) {
+  if (
+    [fullName, email, username, password].some((field) => field.trim() === "")
+  ) {
     throw new ApiError(400, "All fields are required");
   }
 
   // Now we will check if the user is already existed or not in database
   const userAlreadyExist = await User.findOne({
-    $or: [{ username, email }]
+    $or: [{ username, email }],
   });
   if (userAlreadyExist) {
-    throw new ApiError(409, "User already exist in the database. Please use a different a usename or email");
+    throw new ApiError(
+      409,
+      "User already exist in the database. Please use a different a usename or email"
+    );
   }
   // Now getting localPath of the avatar and coverImage
   // We have used a middleware upload that will give us some more variables
@@ -66,12 +80,13 @@ const registerUser = asyncHandler(async (req, res) => {
     email,
     fullName,
     avatar: avatar,
-    coverImage: coverImage || ""
+    coverImage: coverImage || "",
   });
 
   // Checking is user is created successfully
-  const createdUser = await User.findById(user._id)
-    .select("-password -refreshToken");
+  const createdUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
 
   // If user is not created successfully, throw an error
   if (!createdUser) {
@@ -79,9 +94,9 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   // User is created, Send 201 response
-  res.status(201).json(
-    new ApiResponse(201, "User created successfully", createdUser)
-  );
+  res
+    .status(201)
+    .json(new ApiResponse(201, "User created successfully", createdUser));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -95,7 +110,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   // Check if user exist
   const user = await User.findOne({
-    $or: [{ username }, { email }]
+    $or: [{ username }, { email }],
   });
 
   if (!user) {
@@ -110,8 +125,34 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   // generate new accessToken and refreshToken
-  const { accessToken, refreshToken } = await generateAccessAndRefresToken(user._id);
-  // send cookies 
+  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+    user._id
+  );
+
+  // send cookies
+
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const cookieOption = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, "User logged in Successfully", {
+        user: loggedInUser,
+        accessToken,
+        refreshToken,
+      })
+    )
+    .cookie("accessToken", accessToken, cookieOption)
+    .cookie("refreshToken", refreshToken, cookieOption);
 });
 
-export { registerUser, loginUser };
+const logoutUser = asyncHandler(async (req, res) => {});
+
+export { registerUser, loginUser, logoutUser };
