@@ -283,6 +283,8 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Avatar Image is missing");
   }
 
+  //Delete the current uploaded Media on Cloudinary
+
   const avatar = await uploadMediaOnCloudinary(avatarLocalFilePath);
 
   if (!avatar) {
@@ -312,4 +314,5 @@ export {
   changeCurrentPassword,
   getCurrentUser,
   updateAccountDetail,
+  updateUserAvatar,
 };
