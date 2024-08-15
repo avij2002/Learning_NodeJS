@@ -1,9 +1,10 @@
-import jsonwebtoken from "jsonwebtoken";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
+import jwt from "jsonwebtoken";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 
 const verifyLoggedInUser = asyncHandler(async (req, res, next) => {
+  console.log("Inside verify logges  in user");
   try {
     const token =
       req.cookies?.accessToken ||
@@ -13,10 +14,7 @@ const verifyLoggedInUser = asyncHandler(async (req, res, next) => {
       new ApiError(401, "Unauthorized  request");
     }
 
-    const decodedToken = jsonwebtoken.verify(
-      token,
-      process.env.JWT_ACCESS_TOKEN_SECRET
-    );
+    const decodedToken = jwt.verify(token, process.env.JWT_ACCESS_TOKEN_SECRET);
 
     const user = await User.findById(decodedToken?._id).select(
       "-password -refreshToken"
