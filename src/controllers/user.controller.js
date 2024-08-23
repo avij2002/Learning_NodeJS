@@ -239,7 +239,7 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
   }
 
   user.password = newPassword;
-  await user.save({ validateBeforeSave: true });
+  await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
@@ -288,7 +288,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   const avatar = await uploadMediaOnCloudinary(avatarLocalFilePath);
 
   if (!avatar) {
-    throw new ApiError(400, "Upload Avatar on Cloudinary failed");
+    throw new ApiError(500, "Upload Avatar on Cloudinary failed");
   }
 
   const user = await User.findByIdAndUpdate(
@@ -306,6 +306,30 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, "Avatar Image updated successfully", user));
 });
 
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  const coverImageLocalFilePath = req.file?.path;
+
+  if (!coverImageLocalFilePath) {
+    throw new ApiError("400", "Cover Image is required");
+  }
+
+  const coverImage = await uploadMediaOnCloudinary(coverImageLocalFilePath);
+
+  if (!coverImage) {
+    throw new ApiError(500, "Upload CoverImage on cloudinary failed");
+  }
+
+  const user = await User.findByIdAndUpdate(req.user?._id, {
+    $set: {
+      coverImage: coverImage.url
+    }
+  }, { new: true }).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, "Cover Image updated successfully"), user);
+});
+
 export {
   registerUser,
   loginUser,
@@ -315,4 +339,5 @@ export {
   getCurrentUser,
   updateAccountDetail,
   updateUserAvatar,
+  updateUserCoverImage
 };
